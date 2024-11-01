@@ -5,20 +5,37 @@ import { useParams } from "next/navigation";
 import { supabase } from "../../utils/supabase/supabaseClient";
 import { useUser } from "../../context/userContext";
 import Link from "next/link";
+import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
 
 type SquareValue = "X" | "O" | null;
 
 function Square({
   value,
   onSquareClick,
+  disabled,
 }: {
   value: SquareValue;
   onSquareClick: () => void;
+  disabled: boolean;
 }) {
   return (
-    <button className="square" onClick={onSquareClick}>
+    <motion.button
+      className={`w-24 h-24 bg-gray-700 rounded-lg text-4xl font-bold flex items-center justify-center
+                  ${value === "X" ? "text-blue-400" : "text-red-400"}
+                  ${
+                    disabled
+                      ? "cursor-not-allowed opacity-50"
+                      : "hover:bg-gray-600 transition-colors duration-200"
+                  }`}
+      onClick={onSquareClick}
+      disabled={disabled}
+      whileHover={{ scale: disabled ? 1 : 1.05 }}
+      whileTap={{ scale: disabled ? 1 : 0.95 }}
+      aria-label={value ? `Square with ${value}` : "Empty square"}
+    >
       {value}
-    </button>
+    </motion.button>
   );
 }
 
@@ -60,7 +77,6 @@ export default function Game() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch game data
     const fetchGame = async () => {
       const { data, error } = await supabase
         .from("tictactoe_games")
@@ -83,7 +99,6 @@ export default function Game() {
 
     fetchGame();
 
-    // Set up real-time subscription
     const channel = supabase
       .channel(`game_${gameId}`)
       .on(
@@ -95,7 +110,7 @@ export default function Game() {
           filter: `id=eq.${gameId}`,
         },
         (payload) => {
-          console.log("Real-time update received:", payload); // Debugging log
+          console.log("Real-time update received:", payload);
           setGameData(payload.new as GameData);
           setSquares(payload.new.squares);
           setXIsNext(payload.new.x_is_next);
@@ -108,7 +123,6 @@ export default function Game() {
     };
   }, [gameId]);
 
-  // Determine if the user is the creator
   const isCreator = user && gameData && user.id === gameData.creator_id;
 
   useEffect(() => {
@@ -116,7 +130,7 @@ export default function Game() {
       const joinGame = async () => {
         const { error } = await supabase
           .from("tictactoe_games")
-          .update({ status: "started" })
+          .update({ status: "started", opponent_id: user?.id })
           .eq("id", gameId);
 
         if (error) {
@@ -126,23 +140,19 @@ export default function Game() {
 
       joinGame();
     }
-  }, [gameData, isCreator, gameId]);
+  }, [gameData, isCreator, gameId, user]);
 
-  // Add function to determine if current user can move
   const canMove = () => {
     if (!user || !gameData) return false;
 
     const isCreator = user.id === gameData.creator_id;
     const isOpponent = user.id === gameData.opponent_id;
 
-    // Creator is X (moves when x_is_next is true)
-    // Opponent is O (moves when x_is_next is false)
     return (
       (isCreator && gameData.x_is_next) || (isOpponent && !gameData.x_is_next)
     );
   };
 
-  // Update handleClick
   const handleClick = async (i: number) => {
     if (
       calculateWinner(squares) ||
@@ -156,20 +166,16 @@ export default function Game() {
     const nextSquares = squares.slice();
     nextSquares[i] = xIsNext ? "X" : "O";
 
-    // Check for winner after move
     const winner = calculateWinner(nextSquares);
 
-    // Update local state immediately
     setSquares(nextSquares);
     setXIsNext(!xIsNext);
 
-    // Update the database
     const { error } = await supabase
       .from("tictactoe_games")
       .update({
         squares: nextSquares,
         x_is_next: !xIsNext,
-        // Update status to completed if there's a winner
         ...(winner && { status: "completed" }),
       })
       .eq("id", gameId);
@@ -179,7 +185,6 @@ export default function Game() {
     }
   };
 
-  // Update the status message
   const winner = calculateWinner(squares);
   const status = winner
     ? `Game Over - Winner: ${winner}`
@@ -192,42 +197,67 @@ export default function Game() {
     : "Opponent's turn...";
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
+        <Loader2 className="w-8 h-8 animate-spin" />
+        <span className="ml-2">Loading game...</span>
+      </div>
+    );
   }
 
   if (isCreator && gameData?.status === "waiting") {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-        <div className="bg-white p-8 rounded-lg shadow-md">
-          <h1 className="text-3xl font-bold mb-4 text-center text-black">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-gray-800 p-8 rounded-lg shadow-lg"
+        >
+          <h1 className="text-3xl font-bold mb-4 text-center">
             Waiting for another player to join...
           </h1>
-          <p className="text-center">Share this game ID: {gameId}</p>
-        </div>
+          <p className="text-center mb-4">Share this game ID with a friend:</p>
+          <div className="bg-gray-700 p-2 rounded text-center font-mono">
+            {gameId}
+          </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md">
-        <h1 className="text-3xl font-bold mb-4 text-center text-black">
-          Tic Tac Toe
-        </h1>
-        <div className="mb-4 text-xl font-semibold text-center text-black">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-gray-800 p-8 rounded-lg shadow-lg"
+      >
+        <h1 className="text-3xl font-bold mb-4 text-center">Tic Tac Toe</h1>
+        <div
+          className="mb-4 text-xl font-semibold text-center"
+          aria-live="polite"
+        >
           {status}
         </div>
-        <div className="grid grid-cols-3 gap-2 mb-4 text-black">
+        <div className="grid grid-cols-3 gap-2 mb-4">
           {squares.map((value, i) => (
             <Square
               key={i}
               value={value}
               onSquareClick={() => handleClick(i)}
+              disabled={!canMove() || gameData?.status !== "started"}
             />
           ))}
         </div>
-        <Link href={"/"}>Back to home</Link>
-      </div>
+        <Link
+          href="/"
+          className="block text-center mt-4 py-2 px-4 bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+        >
+          Back to home
+        </Link>
+      </motion.div>
     </div>
   );
 }
