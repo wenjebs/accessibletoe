@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { socket } from "../socket";
+import Link from "next/link";
 
 export default function Home() {
   const [isConnected, setIsConnected] = useState(false);
@@ -47,12 +48,23 @@ export default function Home() {
     socket.emit("hello", "EMITTING FROM CLIENT");
   }
 
+  function resetMessage() {
+    setHelloMessage("");
+  }
+
   return (
     <div>
       <p>Status: {isConnected ? "connected" : "disconnected"}</p>
       <p>Transport: {transport}</p>
-      <button onClick={emitHello}>Emit</button>
-      <p>Received Message: {helloMessage}</p>{" "}
+      <div className="flex flex-col">
+        <button onClick={emitHello}>Emit</button>
+        <button onClick={resetMessage}>Reset Message</button>
+      </div>
+      <p>Received Message: {helloMessage}</p>
+      <div className="flex flex-col">
+        <Link href="/tic-tac-toe">TicTacToe</Link>
+        <Link href="/">Back Home</Link>
+      </div>
     </div>
   );
 }
