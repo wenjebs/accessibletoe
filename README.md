@@ -32,7 +32,7 @@ Accessible Toes is a feature-rich TicTacToe game built with Next.js, Supabase, a
 
 ## Usage
 
-### Create a New Game
+### Create a New Game ( Use two incognito browsers to test out multiplayer function )
 
 - **Click on the "Create Game" button** to start a new TicTacToe game.
 - **You will be redirected** to the game page with a unique game ID.
@@ -52,7 +52,7 @@ Accessible Toes is a feature-rich TicTacToe game built with Next.js, Supabase, a
 
 - **Access the "View Your Active Games" page** to see all the games you are participating in.
 
-## Installation
+## Installation on local machines
 
 ### Prerequisites
 
