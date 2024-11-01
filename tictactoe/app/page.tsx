@@ -2,20 +2,99 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from "framer-motion";
+import { User, Loader2 } from "lucide-react";
+import { supabase } from "./utils/supabase/supabaseClient";
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [username, setUsername] = useState<string>("");
+  const [inputName, setInputName] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     setMounted(true);
+    const storedName = localStorage.getItem("username");
+    if (storedName) {
+      setUsername(storedName);
+    }
+
+    const fetchUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error("Error fetching user:", error);
+      } else {
+        setUserId(data.user?.id || null);
+      }
+    };
+
+    fetchUser();
   }, []);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+
+    setIsSubmitting(true);
+    if (inputName.trim() && userId) {
+      setUsername(inputName.trim());
+      localStorage.setItem("username", inputName.trim());
+    }
+    setIsSubmitting(false);
+  };
 
   if (!mounted) {
     return null;
+  }
+
+  if (!username) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md"
+        >
+          <form
+            onSubmit={handleSubmit}
+            className="bg-gray-800 p-8 rounded-lg shadow-lg"
+          >
+            <h2 className="text-3xl font-bold text-white mb-6 text-center">
+              Enter your username
+            </h2>
+            <div className="relative mb-6">
+              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={inputName}
+                onChange={(e) => setInputName(e.target.value)}
+                className="w-full p-3 pl-10 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                placeholder="Username"
+                required
+                aria-label="Username"
+              />
+            </div>
+            <motion.button
+              type="submit"
+              className="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <Loader2 className="animate-spin mx-auto" />
+              ) : (
+                "Submit"
+              )}
+            </motion.button>
+          </form>
+        </motion.div>
+      </div>
+    );
   }
 
   const animationProps = shouldReduceMotion
@@ -38,6 +117,7 @@ export default function Home() {
 
       <header className="p-4" role="banner">
         <h1 className="text-4xl font-bold text-center mb-8">Accessible Toes</h1>
+        <p className="text-center">Welcome, {username}!</p>
       </header>
 
       <main
