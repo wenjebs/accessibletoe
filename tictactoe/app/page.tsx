@@ -24,11 +24,11 @@ export default function Home() {
     }
 
     const fetchUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (error) {
-        console.error("Error fetching user:", error);
-      } else {
+      try {
+        const { data, error } = await supabase.auth.getUser();
         setUserId(data.user?.id || null);
+      } catch (error) {
+        console.error("Error fetching user:", error);
       }
     };
 
@@ -37,13 +37,13 @@ export default function Home() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-
     setIsSubmitting(true);
-    if (inputName.trim() && userId) {
+    if (inputName.trim()) {
       setUsername(inputName.trim());
       localStorage.setItem("username", inputName.trim());
     }
     setIsSubmitting(false);
+    console.log("Submittied");
   };
 
   if (!mounted) {
@@ -76,6 +76,7 @@ export default function Home() {
                 placeholder="Username"
                 required
                 aria-label="Username"
+                id="username"
               />
             </div>
             <motion.button
