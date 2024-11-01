@@ -4,9 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useReducedMotion } from "framer-motion";
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     setMounted(true);
@@ -16,65 +18,93 @@ export default function Home() {
     return null;
   }
 
+  const animationProps = shouldReduceMotion
+    ? {}
+    : {
+        initial: { opacity: 0, y: -20 },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 1 },
+      };
+
   return (
-    <div className="min-h-screen bg-gray-900 text-white font-sans">
+    <div className="min-h-screen bg-gray-900 text-white font-sans" lang="en">
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-500 text-white p-2 rounded"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-500 text-white p-2 rounded focus:ring-2 focus:ring-white"
+        aria-label="Skip to main content"
       >
         Skip to main content
       </a>
-      <header className="p-4">
+
+      <header className="p-4" role="banner">
         <h1 className="text-4xl font-bold text-center mb-8">Accessible Toes</h1>
       </header>
-      <main id="main-content" className="container mx-auto px-4">
+
+      <main
+        id="main-content"
+        className="container mx-auto px-4"
+        role="main"
+        aria-label="Main content"
+      >
         <div className="relative">
           <Image
             src="/placeholder.svg"
-            alt="Space background"
+            alt="Decorative space background image"
             width={800}
             height={400}
             className="w-full h-64 object-cover rounded-lg mb-8"
+            priority
           />
           <motion.div
             className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-4xl font-bold text-white text-center"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1 }}
+            {...animationProps}
           >
-            Welcome to accessible toes!
+            <h2>Welcome to accessible toes!</h2>
           </motion.div>
         </div>
-        <nav>
-          <ul className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <nav role="navigation" aria-label="Main navigation">
+          <ul className="grid grid-cols-1 md:grid-cols-3 gap-6" role="menubar">
             {[
-              { href: "/pages/createGame", text: "Create Game", icon: "🚀" },
+              {
+                href: "/pages/createGame",
+                text: "Create Game",
+                icon: "🚀",
+                description: "Start a new game",
+              },
               {
                 href: "/pages/viewGames",
                 text: "View Other Games",
                 icon: "🌌",
+                description: "Join existing games",
               },
               {
                 href: "/pages/viewYourGames",
                 text: "View Your Active Games",
                 icon: "🎮",
+                description: "Continue your active games",
               },
-            ].map((link, index) => (
-              <li key={link.href}>
+            ].map((link) => (
+              <li key={link.href} role="menuitem">
                 <Link
                   href={link.href}
                   className="group block p-6 rounded-lg bg-gray-800 hover:bg-gray-700 transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  aria-label={link.text}
+                  aria-label={`${link.text} - ${link.description}`}
                 >
                   <motion.div
                     className="flex flex-col items-center space-y-4"
-                    whileHover={{ y: -5 }}
+                    whileHover={shouldReduceMotion ? {} : { y: -5 }}
                   >
-                    <span className="text-4xl">{link.icon}</span>
+                    <span className="text-4xl" role="img" aria-hidden="true">
+                      {link.icon}
+                    </span>
                     <span className="text-xl font-semibold group-hover:text-blue-400 transition-colors">
                       {link.text}
                     </span>
-                    <div className="w-full h-1 bg-blue-500 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-in-out" />
+                    <div
+                      className="w-full h-1 bg-blue-500 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-in-out"
+                      aria-hidden="true"
+                    />
                   </motion.div>
                 </Link>
               </li>
@@ -82,8 +112,15 @@ export default function Home() {
           </ul>
         </nav>
       </main>
-      <footer className="mt-12 text-center p-4 text-sm text-gray-400">
-        <p>&copy; 2024 Accessible Toes. All rights reserved.</p>
+
+      <footer
+        className="mt-12 text-center p-4 text-sm text-gray-400"
+        role="contentinfo"
+      >
+        <p>
+          &copy; {new Date().getFullYear()} Accessible Toes. All rights
+          reserved.
+        </p>
       </footer>
     </div>
   );
