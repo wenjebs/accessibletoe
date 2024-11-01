@@ -98,7 +98,7 @@ export default function YourGames() {
           </div>
         ) : games.length === 0 ? (
           <p className="text-center text-gray-400">
-            You don't have any active games.
+            You don&apos;t have any active games.
           </p>
         ) : (
           <ul className="space-y-4">
