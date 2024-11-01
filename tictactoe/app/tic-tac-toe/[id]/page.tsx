@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../utils/supabase/supabaseClient";
 import { useUser } from "../../context/userContext";
@@ -22,12 +22,12 @@ function Square({
   return (
     <motion.button
       className={`w-24 h-24 bg-gray-700 rounded-lg text-4xl font-bold flex items-center justify-center
-                  ${value === "X" ? "text-blue-400" : "text-red-400"}
-                  ${
-                    disabled
-                      ? "cursor-not-allowed opacity-50"
-                      : "hover:bg-gray-600 transition-colors duration-200"
-                  }`}
+                ${value === "X" ? "text-blue-400" : "text-red-400"}
+                ${
+                  disabled
+                    ? "cursor-not-allowed opacity-50"
+                    : "hover:bg-gray-600 transition-colors duration-200"
+                }`}
       onClick={onSquareClick}
       disabled={disabled}
       whileHover={{ scale: disabled ? 1 : 1.05 }}
@@ -79,7 +79,7 @@ function speakMessage(message: string) {
   }
 }
 
-// position description helper
+// Position description helper
 function getPositionDescription(index: number): string {
   const row = Math.floor(index / 3) + 1;
   const col = (index % 3) + 1;
@@ -92,6 +92,7 @@ export default function Game() {
   const user = useUser();
   const [gameData, setGameData] = useState<GameData | null>(null);
   const [squares, setSquares] = useState<SquareValue[]>(Array(9).fill(null));
+  const prevSquaresRef = useRef<SquareValue[]>(Array(9).fill(null)); // Use useRef for previous squares
   const [xIsNext, setXIsNext] = useState(true);
   const [loading, setLoading] = useState(true);
 
@@ -109,14 +110,9 @@ export default function Game() {
       }
 
       if (data) {
-        // If status changed from waiting to started, announce it
-        if (gameData?.status === "waiting" && data.status === "started") {
-          speakMessage(
-            "A player has joined the game. The game will now begin!"
-          );
-        }
         setGameData(data);
         setSquares(data.squares);
+        prevSquaresRef.current = data.squares; // Initialize previous squares
         setXIsNext(data.x_is_next);
       }
       setLoading(false);
@@ -137,15 +133,32 @@ export default function Game() {
         (payload) => {
           console.log("Real-time update received:", payload);
           const newData = payload.new as GameData;
+
           // If status changed from waiting to started, announce it
           if (gameData?.status === "waiting" && newData.status === "started") {
             speakMessage(
               "A player has joined the game. The game will now begin!"
             );
           }
+
+          // Determine if opponent made a move
+          if (gameData && newData.squares) {
+            const moveIndex = findMoveIndex(
+              prevSquaresRef.current,
+              newData.squares
+            );
+            if (moveIndex !== -1) {
+              const player = newData.x_is_next ? "O" : "X"; // Since x_is_next has been toggled
+              const position = getPositionDescription(moveIndex);
+              speakMessage(`Opponent ${player} placed at ${position}`);
+            }
+          }
+
+          // Update states and ref
           setGameData(newData);
           setSquares(newData.squares);
           setXIsNext(newData.x_is_next);
+          prevSquaresRef.current = newData.squares; // Update previous squares
         }
       )
       .subscribe();
@@ -185,6 +198,18 @@ export default function Game() {
     );
   };
 
+  const findMoveIndex = (
+    oldSquares: SquareValue[],
+    newSquares: SquareValue[]
+  ): number => {
+    for (let i = 0; i < 9; i++) {
+      if (oldSquares[i] !== newSquares[i]) {
+        return i;
+      }
+    }
+    return -1;
+  };
+
   const handleClick = async (i: number) => {
     if (
       calculateWinner(squares) ||
@@ -200,7 +225,7 @@ export default function Game() {
     const position = getPositionDescription(i);
 
     // Announce the move
-    speakMessage(`${xIsNext ? "X" : "O"} placed at ${position}`);
+    speakMessage(`You placed at ${position}`);
 
     const winner = calculateWinner(nextSquares);
     if (winner) {
@@ -224,9 +249,9 @@ export default function Game() {
     }
   };
 
-  const winner = calculateWinner(squares);
-  const status = winner
-    ? `Game Over - Winner: ${winner}`
+  const winnerResult = calculateWinner(squares);
+  const status = winnerResult
+    ? `Game Over - Winner: ${winnerResult}`
     : gameData?.status === "completed"
     ? "Game Over - Draw"
     : gameData?.status === "waiting"
