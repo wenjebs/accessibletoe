@@ -71,7 +71,7 @@ export default function CreateGame() {
         </motion.button>
         <Link
           href="/"
-          className="block text-center mt-6 text-blue-400 hover:text-blue-300 transition-colors flex items-center justify-center"
+          className="text-center mt-6 text-blue-400 hover:text-blue-300 transition-colors flex items-center justify-center"
         >
           <ArrowLeft size={20} className="mr-2" />
           <span>Back to Home</span>

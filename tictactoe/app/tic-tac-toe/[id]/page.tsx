@@ -67,6 +67,25 @@ type GameData = {
   opponent_id: string | null;
 };
 
+function speakMessage(message: string) {
+  // Check if speech synthesis is supported
+  if ("speechSynthesis" in window) {
+    const utterance = new SpeechSynthesisUtterance(message);
+    utterance.voice = window.speechSynthesis.getVoices()[0];
+    utterance.volume = 0.8;
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
+// position description helper
+function getPositionDescription(index: number): string {
+  const row = Math.floor(index / 3) + 1;
+  const col = (index % 3) + 1;
+  return `row ${row}, column ${col}`;
+}
+
 export default function Game() {
   const params = useParams();
   const gameId = params.id as string;
@@ -90,6 +109,12 @@ export default function Game() {
       }
 
       if (data) {
+        // If status changed from waiting to started, announce it
+        if (gameData?.status === "waiting" && data.status === "started") {
+          speakMessage(
+            "A player has joined the game. The game will now begin!"
+          );
+        }
         setGameData(data);
         setSquares(data.squares);
         setXIsNext(data.x_is_next);
@@ -111,9 +136,16 @@ export default function Game() {
         },
         (payload) => {
           console.log("Real-time update received:", payload);
-          setGameData(payload.new as GameData);
-          setSquares(payload.new.squares);
-          setXIsNext(payload.new.x_is_next);
+          const newData = payload.new as GameData;
+          // If status changed from waiting to started, announce it
+          if (gameData?.status === "waiting" && newData.status === "started") {
+            speakMessage(
+              "A player has joined the game. The game will now begin!"
+            );
+          }
+          setGameData(newData);
+          setSquares(newData.squares);
+          setXIsNext(newData.x_is_next);
         }
       )
       .subscribe();
@@ -121,7 +153,7 @@ export default function Game() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [gameId]);
+  }, [gameId, gameData?.status]);
 
   const isCreator = user && gameData && user.id === gameData.creator_id;
 
@@ -165,8 +197,15 @@ export default function Game() {
 
     const nextSquares = squares.slice();
     nextSquares[i] = xIsNext ? "X" : "O";
+    const position = getPositionDescription(i);
+
+    // Announce the move
+    speakMessage(`${xIsNext ? "X" : "O"} placed at ${position}`);
 
     const winner = calculateWinner(nextSquares);
+    if (winner) {
+      speakMessage(`${winner} wins the game!`);
+    }
 
     setSquares(nextSquares);
     setXIsNext(!xIsNext);
