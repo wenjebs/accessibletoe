@@ -50,6 +50,9 @@ export default function YourGames() {
   }, [user]);
 
   const getGameStatus = (game: any) => {
+    if (game.status === "completed") {
+      return "Game Over";
+    }
     if (game.status === "waiting") {
       return "Waiting for opponent";
     }

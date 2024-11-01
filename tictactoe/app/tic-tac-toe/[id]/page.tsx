@@ -47,7 +47,9 @@ type GameData = {
   squares: SquareValue[];
   x_is_next: boolean;
   creator_id: string;
+  opponent_id: string | null;
 };
+
 export default function Game() {
   const params = useParams();
   const gameId = params.id as string;
@@ -125,13 +127,37 @@ export default function Game() {
       joinGame();
     }
   }, [gameData, isCreator, gameId]);
+
+  // Add function to determine if current user can move
+  const canMove = () => {
+    if (!user || !gameData) return false;
+
+    const isCreator = user.id === gameData.creator_id;
+    const isOpponent = user.id === gameData.opponent_id;
+
+    // Creator is X (moves when x_is_next is true)
+    // Opponent is O (moves when x_is_next is false)
+    return (
+      (isCreator && gameData.x_is_next) || (isOpponent && !gameData.x_is_next)
+    );
+  };
+
+  // Update handleClick
   const handleClick = async (i: number) => {
-    if (calculateWinner(squares) || squares[i]) {
+    if (
+      calculateWinner(squares) ||
+      squares[i] ||
+      !canMove() ||
+      gameData?.status !== "started"
+    ) {
       return;
     }
 
     const nextSquares = squares.slice();
     nextSquares[i] = xIsNext ? "X" : "O";
+
+    // Check for winner after move
+    const winner = calculateWinner(nextSquares);
 
     // Update local state immediately
     setSquares(nextSquares);
@@ -143,19 +169,27 @@ export default function Game() {
       .update({
         squares: nextSquares,
         x_is_next: !xIsNext,
+        // Update status to completed if there's a winner
+        ...(winner && { status: "completed" }),
       })
       .eq("id", gameId);
 
     if (error) {
       console.error("Error updating game:", error);
-      // Optionally revert local state if there's an error
     }
   };
 
+  // Update the status message
   const winner = calculateWinner(squares);
   const status = winner
-    ? `Winner: ${winner}`
-    : `Next player: ${xIsNext ? "X" : "O"}`;
+    ? `Game Over - Winner: ${winner}`
+    : gameData?.status === "completed"
+    ? "Game Over - Draw"
+    : gameData?.status === "waiting"
+    ? "Waiting for opponent..."
+    : canMove()
+    ? "Your turn!"
+    : "Opponent's turn...";
 
   if (loading) {
     return <div>Loading...</div>;
