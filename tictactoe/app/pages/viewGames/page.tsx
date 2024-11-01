@@ -5,24 +5,40 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../utils/supabase/supabaseClient";
 import { useUser } from "../../context/userContext";
+import { motion, AnimatePresence } from "framer-motion";
+import { Loader2, ArrowLeft, GamepadIcon, AlertCircle } from "lucide-react";
+
+type Game = {
+  id: string;
+  status: string;
+  creator_id: string;
+};
 
 export default function ActiveGames() {
-  const [games, setGames] = useState<any[]>([]);
+  const [games, setGames] = useState<Game[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const user = useUser();
   const router = useRouter();
 
   useEffect(() => {
     const fetchActiveGames = async () => {
-      const { data, error } = await supabase
-        .from("tictactoe_games")
-        .select("*")
-        .eq("status", "waiting")
-        .neq("creator_id", user?.id); // Exclude user's own games
+      setLoading(true);
+      setError(null);
+      try {
+        const { data, error } = await supabase
+          .from("tictactoe_games")
+          .select("*")
+          .eq("status", "waiting")
+          .neq("creator_id", user?.id);
 
-      if (error) {
-        console.error("Error fetching active games:", error);
-      } else {
+        if (error) throw error;
         setGames(data);
+      } catch (err) {
+        console.error("Error fetching active games:", err);
+        setError("Failed to fetch active games. Please try again.");
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -30,12 +46,11 @@ export default function ActiveGames() {
       fetchActiveGames();
     }
   }, [user]);
+
   const joinGame = async (gameId: string) => {
     try {
-      console.log(`Attempting to join game: ${gameId}`);
-
       if (!user?.id) {
-        console.error("No user ID available");
+        setError("You must be logged in to join a game.");
         return;
       }
 
@@ -49,52 +64,71 @@ export default function ActiveGames() {
         .select()
         .single();
 
-      if (error) {
-        console.error("Supabase error:", error.message);
-        return;
-      }
+      if (error) throw error;
+      if (!data) throw new Error("No data returned from update");
 
-      if (!data) {
-        console.error("No data returned from update");
-        return;
-      }
-
-      console.log("Update successful:", data);
       router.push(`/tic-tac-toe/${gameId}`);
-    } catch (e) {
-      console.error("Exception caught:", e);
+    } catch (err) {
+      console.error("Error joining game:", err);
+      setError("Failed to join the game. Please try again.");
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-3xl font-bold mb-6 text-center text-black">
-          Active Games
-        </h1>
-        {games.length === 0 ? (
-          <p className="text-center">No active games available.</p>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md"
+      >
+        <h1 className="text-3xl font-bold mb-6 text-center">Active Games</h1>
+        {loading ? (
+          <div className="flex justify-center items-center">
+            <Loader2 className="animate-spin mr-2" />
+            <span>Loading games...</span>
+          </div>
+        ) : error ? (
+          <div className="text-red-400 flex items-center justify-center">
+            <AlertCircle className="mr-2" />
+            <span>{error}</span>
+          </div>
+        ) : games.length === 0 ? (
+          <p className="text-center text-gray-400">
+            No active games available.
+          </p>
         ) : (
-          <ul>
-            {games.map((game) => (
-              <li key={game.id} className="mb-4">
-                <button
-                  onClick={() => joinGame(game.id)}
-                  className="text-blue-500 hover:text-blue-600"
+          <ul className="space-y-4">
+            <AnimatePresence>
+              {games.map((game) => (
+                <motion.li
+                  key={game.id}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  Game ID: {game.id}
-                </button>
-              </li>
-            ))}
+                  <button
+                    onClick={() => joinGame(game.id)}
+                    className="w-full p-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-between"
+                    aria-label={`Join game ${game.id}`}
+                  >
+                    <span>Game ID: {game.id}</span>
+                    <GamepadIcon className="ml-2" />
+                  </button>
+                </motion.li>
+              ))}
+            </AnimatePresence>
           </ul>
         )}
         <Link
           href="/"
-          className="block text-center mt-4 text-blue-500 hover:text-blue-600"
+          className="text-center mt-6 text-blue-400 hover:text-blue-300 transition-colors flex items-center justify-center"
         >
-          Back to Home
+          <ArrowLeft className="mr-2" />
+          <span>Back to Home</span>
         </Link>
-      </div>
+      </motion.div>
     </div>
   );
 }

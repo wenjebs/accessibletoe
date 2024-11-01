@@ -5,6 +5,8 @@ import { supabase } from "../../utils/supabase/supabaseClient";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUser } from "../../context/userContext";
+import { motion } from "framer-motion";
+import { Loader2, ArrowLeft, Plus } from "lucide-react";
 
 export default function CreateGame() {
   const router = useRouter();
@@ -29,35 +31,52 @@ export default function CreateGame() {
 
       if (error) throw error;
 
-      // Redirect to the game page with the new game ID
       router.push(`/tic-tac-toe/${data.id}`);
     } catch (error) {
       console.error("Error creating game:", error);
+      // Show error message to user
+      alert("Failed to create game. Please try again.");
     } finally {
       setCreating(false);
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md">
-        <h1 className="text-3xl font-bold mb-6 text-center text-black">
-          Create New Game
-        </h1>
-        <button
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md"
+      >
+        <h1 className="text-3xl font-bold mb-6 text-center">Create New Game</h1>
+        <motion.button
           onClick={createNewGame}
           disabled={creating}
-          className="w-full p-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-blue-300"
+          className="w-full p-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-colors"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
-          {creating ? "Creating..." : "Create New Game"}
-        </button>
+          {creating ? (
+            <>
+              <Loader2 className="animate-spin" />
+              <span>Creating...</span>
+            </>
+          ) : (
+            <>
+              <Plus size={20} />
+              <span>Create New Game</span>
+            </>
+          )}
+        </motion.button>
         <Link
           href="/"
-          className="block text-center mt-4 text-blue-500 hover:text-blue-600"
+          className="block text-center mt-6 text-blue-400 hover:text-blue-300 transition-colors flex items-center justify-center"
         >
-          Back to Home
+          <ArrowLeft size={20} className="mr-2" />
+          <span>Back to Home</span>
         </Link>
-      </div>
+      </motion.div>
     </div>
   );
 }
