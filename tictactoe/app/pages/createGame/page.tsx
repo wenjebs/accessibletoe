@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "../../utils/supabase/supabaseClient";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUser } from "../../context/userContext";
 import { motion } from "framer-motion";
 import { Loader2, ArrowLeft, Plus } from "lucide-react";
+import { createGame } from "@/app/services/gameService";
 
 export default function CreateGame() {
   const router = useRouter();
@@ -16,25 +16,10 @@ export default function CreateGame() {
   const createNewGame = async () => {
     setCreating(true);
     try {
-      const { data, error } = await supabase
-        .from("tictactoe_games")
-        .insert([
-          {
-            squares: Array(9).fill(null),
-            x_is_next: true,
-            status: "waiting",
-            creator_id: user?.id ?? null,
-          },
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-
+      const data = await createGame(user?.id ?? null);
       router.push(`/tic-tac-toe/${data.id}`);
     } catch (error) {
       console.error("Error creating game:", error);
-      // Show error message to user
       alert("Failed to create game. Please try again.");
     } finally {
       setCreating(false);

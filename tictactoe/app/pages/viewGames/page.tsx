@@ -7,6 +7,7 @@ import { supabase } from "../../utils/supabase/supabaseClient";
 import { useUser } from "../../context/userContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, ArrowLeft, GamepadIcon, AlertCircle } from "lucide-react";
+import { fetchActiveGames } from "@/app/services/gameService";
 
 type Game = {
   id: string;
@@ -22,18 +23,11 @@ export default function ActiveGames() {
   const router = useRouter();
 
   useEffect(() => {
-    const fetchActiveGames = async () => {
+    const getGames = async () => {
       setLoading(true);
-      setError(null);
       try {
-        const { data, error } = await supabase
-          .from("tictactoe_games")
-          .select("*")
-          .eq("status", "waiting")
-          .neq("creator_id", user?.id);
-
-        if (error) throw error;
-        setGames(data);
+        const games = await fetchActiveGames(user!.id);
+        setGames(games);
       } catch (err) {
         console.error("Error fetching active games:", err);
         setError("Failed to fetch active games. Please try again.");
@@ -41,10 +35,7 @@ export default function ActiveGames() {
         setLoading(false);
       }
     };
-
-    if (user) {
-      fetchActiveGames();
-    }
+    getGames();
   }, [user]);
 
   const joinGame = async (gameId: string) => {
