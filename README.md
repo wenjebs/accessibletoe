@@ -92,6 +92,10 @@ or
 yarn dev
 ```
 
+# Summary of Design/Infrastructure Decisions and Accessibility Considerations
+
+My application leverages **Next.js** for server-side rendering and **React** for building dynamic user interfaces, ensuring fast load times and a seamless user experience. I separated backend logic from frontend components by creating service modules like `gameService.ts`, enhancing code maintainability and scalability.
+
 ## Accessibility
 
 Accessible Toes is built with accessibility in mind, adhering to [WCAG 2.1 Level AA](https://www.w3.org/TR/WCAG21/) standards to ensure an inclusive experience for all users.
@@ -101,3 +105,27 @@ Accessible Toes is built with accessibility in mind, adhering to [WCAG 2.1 Level
 - **Color Contrast**: Ensured sufficient color contrast for readability.
 - **Reduced Motion**: Supports user preferences for reduced motion to prevent motion sickness.
 - **Voice Notifications**: Provides voice feedback for game events, aiding users with visual impairments.
+  
+## Architecture
+
+For the architecture, I chose **Supabase** as our backend service due to its real-time capabilities and ease of integration with Next.js. This setup allows us to handle real-time game updates efficiently. I implemented **modular code practices**, keeping the codebase organized and facilitating easier future enhancements.
+![Architecture](./docs/architecture.png)
+
+# Screenshots of Application
+1. **Create New Game Screen**  
+   ![Create New Game](./docs/creategame.png)
+
+2. **Home Screen**  
+   ![Home Screen](./docs/home.png)
+
+3. **View Active Games Screen**  
+   ![View Active Games](./docs/viewactivegames.png)
+
+4. **Waiting Screen**  
+   ![Waiting Screen](./docs/waiting.png)
+
+5. **Gameplay Screen**  
+   ![Gameplay Screen](./docs/gameplay.png)
+
+6. **View Games Screen**  
+   ![View Games](./docs/viewgames.png)
