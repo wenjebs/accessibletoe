@@ -21,17 +21,6 @@ export default function Home() {
     if (storedName) {
       setUsername(storedName);
     }
-
-    const fetchUser = async () => {
-      try {
-        const { data } = await supabase.auth.getUser();
-        setUserId(data.user?.id || null);
-      } catch (error) {
-        console.error("Error fetching user:", error);
-      }
-    };
-
-    fetchUser();
   }, []);
 
   const handleSubmit = async (e: FormEvent) => {
