@@ -10,7 +10,6 @@ import { supabase } from "./utils/supabase/supabaseClient";
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
   const [username, setUsername] = useState<string>("");
   const [inputName, setInputName] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,7 +24,7 @@ export default function Home() {
 
     const fetchUser = async () => {
       try {
-        const { data, error } = await supabase.auth.getUser();
+        const { data } = await supabase.auth.getUser();
         setUserId(data.user?.id || null);
       } catch (error) {
         console.error("Error fetching user:", error);
