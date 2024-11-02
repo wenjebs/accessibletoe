@@ -6,7 +6,6 @@ import { useState, useEffect, FormEvent } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from "framer-motion";
 import { User, Loader2 } from "lucide-react";
-import { supabase } from "./utils/supabase/supabaseClient";
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
